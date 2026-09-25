@@ -27,7 +27,7 @@ const TESTIMONIALS = []; // client quotes: { quote: 'He delivered fast.', name: 
 // -----------------------------------
 
 const $ = id => document.getElementById(id);
-const BUILD = '20260925d'; // must match <meta name="build"> in index.html; bump both on every deploy
+const BUILD = '20260925e'; // must match <meta name="build"> in index.html; bump both on every deploy
 // Self-heal mixed deploys: if this script and the page are from different builds
 // (stale cache), reload once for a consistent pair instead of running half-dead.
 try {
@@ -843,6 +843,7 @@ function fbMsg(e) {
   if (c === 'auth/too-many-requests') return 'Too many tries — wait a bit, then try again.';
   if (c === 'auth/network-request-failed') return 'Network problem — check your connection and try again.';
   if (c === 'auth/popup-blocked') return 'Popup blocked — allow popups for this site and try again.';
+  if (c === 'auth/popup-timeout') return 'Google is taking too long — trying another way…';
   return (e && e.message) || 'Something went wrong. Try again.';
 }
 function openAuth(mode) {
@@ -904,12 +905,31 @@ async function amSubmit() {
 }
 async function googleLogin() {
   if (!window.firebase) { $('amerr').textContent = "Sign-in service didn't load (ad-blocker or offline?). Try again with it off."; return; }
+  const g = $('amgoogle');
+  let provider;
+  try { provider = new window.firebase.auth.GoogleAuthProvider(); }
+  catch (e) { $('amerr').textContent = fbMsg(e); return; }
+  const auth = window.firebase.auth();
+  g.disabled = true; // visible feedback: every click does something observable
+  const label = g.innerHTML;
+  g.innerHTML = 'Opening Google…';
+  const done = () => { try { g.disabled = false; g.innerHTML = label; } catch (e) {} };
   try {
-    await window.firebase.auth().signInWithPopup(new window.firebase.auth.GoogleAuthProvider());
+    await Promise.race([
+      auth.signInWithPopup(provider),
+      new Promise((_, rej) => setTimeout(() => rej({ code: 'auth/popup-timeout' }), 9000)),
+    ]);
+    done();
     closeAuth();
   } catch (e) {
-    if ((e && e.code) === 'auth/popup-closed-by-user') return;
+    const c = e && e.code;
+    if (c === 'auth/popup-closed-by-user') { done(); return; }
+    if (c === 'auth/popup-blocked' || c === 'auth/popup-timeout' || c === 'auth/cancelled-popup-request') {
+      try { await auth.signInWithRedirect(provider); return; } // page leaves for Google; session resumes on return
+      catch (e2) { $('amerr').textContent = fbMsg(e2); done(); return; }
+    }
     $('amerr').textContent = fbMsg(e);
+    done();
   }
 }
 on('amforgot', 'click', async () => {
@@ -938,11 +958,20 @@ function initAuth() {
   try {
     try { localStorage.removeItem('stoufa-user'); } catch (e) {} // retired Google-only session key
     window.firebase.initializeApp(FIREBASE_CONFIG);
-    window.firebase.auth().onAuthStateChanged(u => {
+    const auth = window.firebase.auth();
+    auth.onAuthStateChanged(u => {
       fbUser = u || null;
       if (u) fillAccount();
       renderAccount(); updateTicket(); save();
     });
+    try { // surface redirect-login errors (e.g. email already used another way) on return
+      const gr = auth.getRedirectResult();
+      if (gr && typeof gr.catch === 'function') gr.catch(e => {
+        if (e && e.code && e.code !== 'auth/popup-closed-by-user') {
+          try { err.textContent = fbMsg(e); } catch (x) {}
+        }
+      });
+    } catch (e) {}
     fbReady = true;
   } catch (e) { fbFailed = true; }
   renderAccount();

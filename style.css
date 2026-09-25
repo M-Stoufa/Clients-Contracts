@@ -152,6 +152,7 @@ button.navlink.main{color:#fff}
 .btn svg{width:30px;height:30px;padding:7px;border-radius:50%;background:rgba(0,0,0,.25);stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease)}
 .btn:hover svg{transform:translateX(4px)}
 .btn:disabled{opacity:.6;cursor:not-allowed;filter:saturate(.5)}
+.ghost:disabled{opacity:.55;cursor:wait}
 .ghost{background:var(--glass);color:var(--text);border:1.5px solid var(--line)}
 .ghost:hover{border-color:var(--text);transform:translateY(-2px)}
 .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
