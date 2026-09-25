@@ -28,7 +28,7 @@
 
 <header class="nav">
   <a class="logo" href="#top"><i></i>STOUFA</a>
-  <div class="rt"><a class="navlink hide-m" href="#contact">Contact</a></div>
+  <div class="rt"><button type="button" class="navlink" id="navacct" hidden>Sign in</button><a class="navlink hide-m" href="#contact">Contact</a></div>
 </header>
 
 <main id="top">
@@ -131,11 +131,13 @@
           <h2>Who are you?</h2>
           <div id="gbox" class="gbox" hidden>
             <p class="lbl">Account — sign in to order</p>
-            <div id="gbtn"></div>
             <p id="ginfo" hidden></p>
             <div id="gorders"></div>
-            <button type="button" class="ghost" id="gout" hidden>Sign out</button>
-            <p id="gnote" class="privacy" hidden>Google sign-in didn't load (ad-blocker or offline?). You can still submit this time — or reach me directly below.</p>
+            <div class="btns2">
+              <button type="button" class="ghost" id="gopen">Sign in / Create account</button>
+              <button type="button" class="ghost" id="gout" hidden>Sign out</button>
+            </div>
+            <p id="gnote" class="privacy" hidden>Sign-in service didn't load (ad-blocker or offline?). You can still submit this time — or reach me directly below.</p>
           </div>
           <div class="field"><label for="cn">Your full name</label><input type="text" id="cn" name="Client name" autocomplete="name" maxlength="120" required></div>
           <div class="field"><label for="bn">Business or project name</label><input type="text" id="bn" name="Business or project name" maxlength="120" required></div>
@@ -239,6 +241,37 @@
   </footer>
 </main>
 
-<script src="script.js?v=5"></script>
+<script src="script.js?v=6"></script>
+
+<div id="authmodal" hidden>
+  <div class="am-back" id="amback"></div>
+  <div class="am-card" role="dialog" aria-modal="true" aria-labelledby="amh">
+    <button type="button" class="am-x" id="amx" aria-label="Close">×</button>
+    <div id="amlogged" hidden>
+      <h3 id="amh">Your account</h3>
+      <p id="amwho" class="privacy"></p>
+      <div id="amverify" hidden>
+        <p class="privacy">Email not verified yet — check your inbox (and spam), then you're set.</p>
+        <button type="button" class="ghost" id="amresend">Resend verification email</button>
+      </div>
+      <button type="button" class="ghost" id="amout">Sign out</button>
+    </div>
+    <div id="amguest">
+      <h3>Sign in / Create account</h3>
+      <div class="chips" id="amtabs">
+        <button type="button" class="chip sel" id="amtabin">Sign in</button>
+        <button type="button" class="chip" id="amtabup">Create account</button>
+      </div>
+      <button type="button" class="ghost" id="amgoogle">Continue with Google</button>
+      <p class="lbl">or with email</p>
+      <div class="field" id="amnamewrap" hidden><label for="amname">Your full name</label><input type="text" id="amname" autocomplete="name" maxlength="120"></div>
+      <div class="field"><label for="ammail">Email</label><input type="email" id="ammail" autocomplete="email" inputmode="email" maxlength="254"></div>
+      <div class="field"><label for="ampass">Password (min 6 characters)</label><input type="password" id="ampass" autocomplete="current-password" maxlength="128"></div>
+      <p class="err" id="amerr" role="alert"></p>
+      <button type="button" class="btn" id="amgo">Sign in</button>
+      <p class="privacy">First time? Use Create account — signing up and logging in is one flow, and orders tie to your account.</p>
+    </div>
+  </div>
+</div>
 </body>
 </html>

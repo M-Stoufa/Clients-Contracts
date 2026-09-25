@@ -4,7 +4,6 @@ const MIN_DEPOSIT_PCT = 20; // minimum deposit as a percent of the total
 const MIN_TOTAL = { TND: 10, USD: 5, EUR: 5 }; // minimum order total, per currency
 const DISCORD = 'https://discord.gg/PAwYBcmQAX';
 const EMAIL = 'boussenmostafa@gmail.com'; // single source of truth: page links sync to this on load, PDF + fallback email use it too
-const GOOGLE_CLIENT_ID = '855246719403-55dj889blubd1f5d4vfb0iabh9k3bske.apps.googleusercontent.com'; // Google sign-in required before submit (see README). Empty = sign-in off, page works as before.
 const BUSINESS_ADDRESS = ''; // set a full street address here to show it in the footer (some consumer-protection rules expect one); leave empty to hide
 const PRICES = { 'Website': 0, 'Discord bot': 0, 'Minecraft plugin or mod': 0, 'Something else': 0 }; // starting prices in TND. 0 hides the price.
 const EXTRA_TERMS = [ // added after term 8, shown to the client and included in the PDF and the order email
@@ -192,7 +191,8 @@ function check() {
     if (v('ct2').toLowerCase() !== v('ct').toLowerCase()) return 'Both email fields must match — retype it carefully.';
   }
   if (cur === 3) {
-    if (GOOGLE_CLIENT_ID && gisReady && !getUser()) return 'Sign in with Google above to submit your order.';
+    if (FIREBASE_CONFIG && fbReady && !getUser()) return 'Sign in (top right, or below) to submit your order.';
+    if (FIREBASE_CONFIG && getUser() && !getUser().verified) return 'Verify your email first — check your inbox, or resend it from your account.';
     if (!v('sg') || !$('ag').checked || !$('pc').checked) return 'Type your name as a signature and tick both boxes to continue.';
     const norm = s => s.trim().replace(/\s+/g, ' ').toLowerCase();
     if (norm(v('sg')) !== norm(v('cn'))) return 'Signature must match the full name you entered in “Who are you?”.';
@@ -740,20 +740,22 @@ try {
   }
 } catch (e) {}
 
-// Google sign-in (optional until GOOGLE_CLIENT_ID is set; the page works without it).
-// No backend needed: Google returns an ID token, the page reads name/email from it,
-// locks those fields to the Google identity, and keeps a per-client order register.
+// Accounts: Firebase Auth (Google + email/password) on the static site, no backend of mine.
+// Until FIREBASE_CONFIG is set, the account UI stays hidden and the page works as before.
 // Note: this proves identity to the page, not cryptographically to Stoufa — the
 // order email + verification code stay the trust anchor for deposits.
-const UKEY = 'stoufa-user', OKEYS = 'stoufa-orders';
-let gisReady = false, gisFailed = false;
-function getUser() { try { return JSON.parse(localStorage.getItem(UKEY) || 'null'); } catch (e) { return null; } }
+const FIREBASE_CONFIG = null; // paste your Firebase web config object here (see README)
+const OKEYS = 'stoufa-orders';
+let fbUser = null, fbReady = false, fbFailed = false, authMode = 'in';
+function getUser() {
+  return fbUser ? { sub: fbUser.uid, name: fbUser.displayName || '', email: fbUser.email || '', verified: !!fbUser.emailVerified } : null;
+}
 function getOrders() { try { return JSON.parse(localStorage.getItem(OKEYS) || '{}'); } catch (e) { return {}; } }
 function myOrders() { const u = getUser(); return u ? (getOrders()[u.sub] || []) : []; }
 function addOrder() {
   const u = getUser();
   if (!u) return;
-  const entry = { no: orderNo, svc: svcLabel() || svc(), total: $('tp').value || '0', cur: curCode(), on: today() };
+  const entry = { no: orderNo, svc: svcLabel() || svc(), total: $('tp').value || '0', cur: curCode(), pay: pay(), bn: $('bn').value.trim(), on: today() };
   const all = getOrders(), mine = all[u.sub] || [];
   const i = mine.findIndex(o => o.no === entry.no);
   if (i >= 0) mine[i] = Object.assign(mine[i], entry); else mine.unshift(entry); // edits update, new orders append
@@ -765,18 +767,25 @@ function fillAccount() {
   if (!u) return;
   $('cn').value = u.name || '';
   $('ct').value = u.email || ''; $('ct2').value = u.email || '';
-  ['cn', 'ct', 'ct2'].forEach(id => { $(id).readOnly = true; }); // locked to the Google identity
+  ['cn', 'ct', 'ct2'].forEach(id => { $(id).readOnly = true; }); // locked to the account identity
+  const last = myOrders()[0]; // smart refill: business name, currency and pay from the last order, only where untouched
+  if (last) {
+    if (!$('bn').value && last.bn) $('bn').value = last.bn;
+    if (curCode() === 'TND' && last.cur) pick('cur', last.cur);
+    if (!pay() && last.pay) pick('pay', last.pay);
+  }
 }
 function renderAccount() {
   const box = $('gbox');
   if (!box) return;
-  if (!GOOGLE_CLIENT_ID) { box.hidden = true; return; }
+  if (!FIREBASE_CONFIG) { box.hidden = true; return; }
   box.hidden = false;
   const u = getUser();
-  $('gbtn').style.display = u ? 'none' : '';
+  $('gopen').hidden = !!u;
   $('ginfo').hidden = !u;
   $('gout').hidden = !u;
-  $('gnote').hidden = !!(u || !gisFailed);
+  $('gnote').hidden = !!(u || !fbFailed);
+  updateNavAcct();
   if (!u) { $('gorders').innerHTML = ''; return; }
   $('ginfo').textContent = u.name + ' · ' + u.email;
   const list = myOrders();
@@ -785,48 +794,130 @@ function renderAccount() {
       '<div><span>' + esc(o.no) + '</span><span>' + esc(o.svc) + ' · ' + esc(o.total) + ' ' + esc(o.cur) + '</span></div>').join('')
     : '<span class="privacy">No orders yet — submitted orders will appear here.</span>';
 }
-function onGoogle(resp) {
-  try {
-    const p = JSON.parse(atob(String(resp.credential).split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    if (!p || !p.sub || !p.email) throw 0;
-    try { localStorage.setItem(UKEY, JSON.stringify({ sub: p.sub, name: p.name || '', email: p.email })); } catch (e) {}
-    fillAccount();
-  } catch (e) {
-    err.textContent = "Google sign-in didn't work. Try again, or contact me directly below.";
-    return;
+function updateNavAcct() {
+  const b = $('navacct');
+  if (!b) return;
+  if (!FIREBASE_CONFIG) { b.hidden = true; return; }
+  b.hidden = false;
+  const u = getUser();
+  b.textContent = u ? (u.name.split(' ')[0] || 'Account') : 'Sign in';
+}
+function fbMsg(e) {
+  const c = (e && e.code) || '';
+  if (c === 'auth/email-already-in-use') return 'That email already has an account — switch to Sign in.';
+  if (c === 'auth/invalid-credential' || c === 'auth/wrong-password') return 'Wrong email or password.';
+  if (c === 'auth/user-not-found') return 'No account for that email — use Create account.';
+  if (c === 'auth/too-many-requests') return 'Too many tries — wait a bit, then try again.';
+  if (c === 'auth/network-request-failed') return 'Network problem — check your connection and try again.';
+  return (e && e.message) || 'Something went wrong. Try again.';
+}
+function openAuth(mode) {
+  if (mode) setAuthMode(mode);
+  renderAuth();
+  $('authmodal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => { const f = $('ammail'); if (f) f.focus({ preventScroll: true }); }, 60);
+}
+function closeAuth() {
+  $('authmodal').hidden = true;
+  document.body.style.overflow = '';
+  $('amerr').textContent = '';
+}
+function setAuthMode(m) {
+  authMode = m;
+  $('amtabin').classList.toggle('sel', m === 'in');
+  $('amtabup').classList.toggle('sel', m === 'up');
+  $('amnamewrap').hidden = m !== 'up';
+  $('amgo').textContent = m === 'up' ? 'Create account' : 'Sign in';
+  $('ampass').autocomplete = m === 'up' ? 'new-password' : 'current-password';
+  $('amerr').textContent = '';
+}
+function renderAuth() {
+  const u = getUser();
+  $('amlogged').hidden = !u;
+  $('amguest').hidden = !!u;
+  if (u) {
+    $('amwho').textContent = u.name + ' · ' + u.email;
+    $('amverify').hidden = !!u.verified;
   }
-  renderAccount(); updateTicket(); save();
 }
-function signOut() {
-  try { localStorage.removeItem(UKEY); } catch (e) {}
-  try { if (window.google) window.google.accounts.id.disableAutoSelect(); } catch (e) {}
-  ['cn', 'ct', 'ct2'].forEach(id => { $(id).value = ''; $(id).readOnly = false; });
-  renderAccount(); updateTicket(); save();
-}
-$('gout').addEventListener('click', signOut);
-function loadGis() {
-  if (window.google) return Promise.resolve();
-  return new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.defer = true;
-    s.onload = res; s.onerror = rej; document.head.appendChild(s);
-  });
-}
-function initGoogle() {
+async function amSubmit() {
+  const go = $('amgo');
+  $('amerr').textContent = '';
+  const email = $('ammail').value.trim(), pass = $('ampass').value;
+  if (!/^\S+@\S+\.\S+$/.test(email)) { $('amerr').textContent = 'Enter a valid email.'; return; }
+  if (pass.length < 6) { $('amerr').textContent = 'Password needs at least 6 characters.'; return; }
+  go.disabled = true;
   try {
-    window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogle, ux_mode: 'popup' });
-    const b = $('gbtn');
-    if (b) { b.innerHTML = ''; window.google.accounts.id.renderButton(b, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', width: 280 }); }
-    gisReady = true;
-  } catch (e) { gisFailed = true; }
+    const auth = window.firebase.auth();
+    if (authMode === 'up') {
+      const name = $('amname').value.trim();
+      if (!name) { $('amerr').textContent = 'Enter your full name.'; go.disabled = false; return; }
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await cred.user.updateProfile({ displayName: name });
+      try { await cred.user.sendEmailVerification(); } catch (e) {}
+    } else {
+      await auth.signInWithEmailAndPassword(email, pass);
+    }
+    closeAuth();
+  } catch (e) { $('amerr').textContent = fbMsg(e); go.disabled = false; }
+}
+async function googleLogin() {
+  try {
+    await window.firebase.auth().signInWithPopup(new window.firebase.auth.GoogleAuthProvider());
+    closeAuth();
+  } catch (e) {
+    if ((e && e.code) === 'auth/popup-closed-by-user') return;
+    $('amerr').textContent = fbMsg(e);
+  }
+}
+async function signOut() {
+  try { await window.firebase.auth().signOut(); } catch (e) {}
+  ['cn', 'ct', 'ct2'].forEach(id => { const el = $(id); el.value = ''; el.readOnly = false; });
+  renderAccount(); updateTicket(); save();
+}
+function loadFb() {
+  if (window.firebase) return Promise.resolve();
+  return Promise.all([
+    loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js'),
+    loadScript('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js')
+  ]);
+}
+function initAuth() {
+  try {
+    try { localStorage.removeItem('stoufa-user'); } catch (e) {} // retired Google-only session key
+    window.firebase.initializeApp(FIREBASE_CONFIG);
+    window.firebase.auth().onAuthStateChanged(u => {
+      fbUser = u || null;
+      if (u) fillAccount();
+      renderAccount(); updateTicket(); save();
+    });
+    fbReady = true;
+  } catch (e) { fbFailed = true; }
   renderAccount();
 }
-if (GOOGLE_CLIENT_ID) {
+$('gopen').addEventListener('click', () => openAuth());
+$('gout').addEventListener('click', signOut);
+$('navacct').addEventListener('click', () => openAuth());
+$('amx').addEventListener('click', closeAuth);
+$('amback').addEventListener('click', closeAuth);
+$('amtabin').addEventListener('click', () => setAuthMode('in'));
+$('amtabup').addEventListener('click', () => setAuthMode('up'));
+$('amgo').addEventListener('click', amSubmit);
+$('amgoogle').addEventListener('click', googleLogin);
+$('amout').addEventListener('click', signOut);
+$('amresend').addEventListener('click', async () => {
+  try { await fbUser.sendEmailVerification(); $('amerr').textContent = ''; $('amverify').querySelector('p').textContent = 'Sent — check your inbox and spam folder.'; }
+  catch (e) { $('amerr').textContent = fbMsg(e); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('authmodal').hidden) closeAuth(); });
+if (FIREBASE_CONFIG) {
   renderAccount();
-  loadGis().then(initGoogle).catch(() => { gisFailed = true; renderAccount(); });
+  loadFb().then(initAuth).catch(() => { fbFailed = true; renderAccount(); });
 } else {
   const gb = $('gbox');
   if (gb) gb.hidden = true;
+  updateNavAcct();
 }
 
 // Resume a saved order (window still open, final, or cancelled) or start fresh
