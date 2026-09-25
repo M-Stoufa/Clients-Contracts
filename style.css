@@ -109,6 +109,29 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #gout{height:44px;font-size:.9rem;margin-bottom:12px}
 .field input[readonly]{opacity:.8;cursor:not-allowed}
 
+/* Nav account button */
+button.navlink{font-family:inherit;cursor:pointer}
+button.navlink.main{color:#fff}
+
+/* Auth modal */
+#authmodal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px}
+#authmodal[hidden]{display:none}
+.am-back{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);animation:fadeIn .3s var(--ease)}
+.am-card{position:relative;width:min(430px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:30px 28px;box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 60px rgba(226,36,27,.12);animation:ampop .35s var(--ease)}
+@keyframes ampop{from{opacity:0;transform:translateY(22px) scale(.97)}}
+.am-card h3{font-size:1.4rem;margin:0 0 18px;letter-spacing:-.02em}
+.am-x{position:absolute;top:12px;right:14px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--glass);color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;transition:.25s}
+.am-x:hover{color:#fff;border-color:var(--red);transform:rotate(90deg)}
+#amtabs{margin-bottom:18px}
+#amtabs .chip.sel{border-color:var(--red);background:rgba(226,36,27,.16)}
+#amgoogle{width:100%;margin-bottom:18px}
+#amgo{width:100%;margin-top:6px}
+#amwho{margin:0 0 14px;color:var(--text);font-weight:600}
+#amverify{margin-bottom:14px}
+#amverify .ghost,#amout{width:100%;margin-bottom:10px}
+#authmodal input[type=password]{width:100%;padding:15px 18px;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font-size:1rem;font-family:inherit;transition:border-color .25s,box-shadow .25s}
+#authmodal input[type=password]:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 4px rgba(226,36,27,.18)}
+
 /* Buttons: pills with glow and sliding light */
 .btns{display:flex;gap:12px;margin-top:28px}
 .btn,.ghost{position:relative;overflow:hidden;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;gap:12px;
