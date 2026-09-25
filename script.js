@@ -27,6 +27,9 @@ const TESTIMONIALS = []; // client quotes: { quote: 'He delivered fast.', name: 
 // -----------------------------------
 
 const $ = id => document.getElementById(id);
+// Fail-soft listener: a missing element (stale cached page, partial deploy) must
+// never kill the whole script — that feature just stays dormant.
+const on = (id, ev, fn) => { try { const el = $(id); if (el) el.addEventListener(ev, fn); } catch (e) {} };
 const form = $('f'), err = $('err'), btn = $('btn'), prog = $('prog');
 const next = $('next'), back = $('back');
 const steps = [...document.querySelectorAll('.step')];
@@ -346,7 +349,7 @@ function tick() {
 }
 setInterval(tick, 1000);
 
-$('chg').addEventListener('click', () => {
+on('chg', 'click', () => {
   if (!state || state.status !== 'pending') return;
   $('done').hidden = true; form.hidden = false; $('stepper').hidden = false; $('editnote').hidden = false;
   $('ticket').classList.remove('signed', 'cancelled');
@@ -355,7 +358,7 @@ $('chg').addEventListener('click', () => {
   updateTicket(); go(0); tick();
 });
 let armed = false;
-$('cxl').addEventListener('click', async () => {
+on('cxl', 'click', async () => {
   const b = $('cxl');
   if (!armed) { armed = true; b.textContent = 'Tap again to confirm'; setTimeout(() => { armed = false; b.textContent = 'Cancel order'; }, 4000); return; }
   armed = false;
@@ -373,7 +376,7 @@ $('cxl').addEventListener('click', async () => {
   }
   b.disabled = false; b.textContent = 'Cancel order';
 });
-$('again').addEventListener('click', () => {
+on('again', 'click', () => {
   state = null; persist(); snapshot = null;
   try { localStorage.removeItem(KEY); } catch (e) {}
   form.reset(); orderNo = newNo(); token = rnd(10); $('tid').textContent = orderNo;
@@ -611,7 +614,7 @@ const needsArabic = o => ['Client name', 'Business or project name', 'Project de
 const loadScript = src => new Promise((res, rej) => { const t = document.createElement('script'); t.src = src; t.onload = res; t.onerror = rej; document.head.appendChild(t); });
 const loadArabicAssets = () => (window.ArabicShape && window.ArabicFontData) ? Promise.resolve() : Promise.all([loadScript('arabic-shaping.js'), loadScript('arabic-font.js')]);
 
-$('copy').addEventListener('click', () => {
+on('copy', 'click', () => {
   const o = snapshot || {};
   loadPdfLib()
     .then(() => needsArabic(o) ? loadArabicAssets().catch(() => null) : null)
@@ -913,21 +916,21 @@ function initAuth() {
   } catch (e) { fbFailed = true; }
   renderAccount();
 }
-$('gopen').addEventListener('click', () => openAuth());
-$('gout').addEventListener('click', signOut);
-$('navacct').addEventListener('click', () => openAuth());
-$('amx').addEventListener('click', closeAuth);
-$('amback').addEventListener('click', closeAuth);
-$('amtabin').addEventListener('click', () => setAuthMode('in'));
-$('amtabup').addEventListener('click', () => setAuthMode('up'));
-$('amgo').addEventListener('click', amSubmit);
-$('amgoogle').addEventListener('click', googleLogin);
-$('amout').addEventListener('click', signOut);
-$('amresend').addEventListener('click', async () => {
+on('gopen', 'click', () => openAuth());
+on('gout', 'click', signOut);
+on('navacct', 'click', () => openAuth());
+on('amx', 'click', closeAuth);
+on('amback', 'click', closeAuth);
+on('amtabin', 'click', () => setAuthMode('in'));
+on('amtabup', 'click', () => setAuthMode('up'));
+on('amgo', 'click', amSubmit);
+on('amgoogle', 'click', googleLogin);
+on('amout', 'click', signOut);
+on('amresend', 'click', async () => {
   try { await fbUser.sendEmailVerification(); $('amerr').textContent = ''; $('amverify').querySelector('p').textContent = 'Sent — check your inbox and spam folder.'; }
   catch (e) { $('amerr').textContent = fbMsg(e); }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('authmodal').hidden) closeAuth(); });
+document.addEventListener('keydown', e => { const am = $('authmodal'); if (e.key === 'Escape' && am && !am.hidden) closeAuth(); });
 if (FIREBASE_CONFIG) {
   renderAccount();
   loadFb().then(initAuth).catch(() => { fbFailed = true; renderAccount(); });
