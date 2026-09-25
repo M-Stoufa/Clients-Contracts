@@ -110,7 +110,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .field input[readonly]{opacity:.8;cursor:not-allowed}
 
 /* Wide split-panel auth dialog */
-.am-card.wide{width:min(780px,100%);padding:0;display:grid;grid-template-columns:290px 1fr;overflow:hidden}
+.am-card.wide{width:min(780px,100%);padding:0;display:grid;grid-template-columns:290px 1fr;overflow:auto}
+@keyframes fadeSwap{from{opacity:0;transform:translateY(12px)}}
+#amguest:not([hidden]),#amlogged:not([hidden]){animation:fadeSwap .35s var(--ease)}
+#amnamewrap{display:grid;grid-template-rows:0fr;opacity:0;margin-bottom:0;transition:grid-template-rows .4s var(--ease),opacity .3s,margin .3s}
+#amnamewrap.open{grid-template-rows:1fr;opacity:1;margin-bottom:20px}
+#amnamewrap>.amnamein{overflow:hidden;min-height:0}
 .am-side{position:relative;padding:36px 30px;background:linear-gradient(165deg,rgba(226,36,27,.20),rgba(20,20,20,0) 55%),var(--panel);border-right:1px solid var(--line);overflow:hidden}
 .am-side::before{content:'';position:absolute;width:340px;height:340px;left:-120px;top:-120px;background:radial-gradient(circle,rgba(226,36,27,.32),transparent 65%);pointer-events:none}
 .am-logo{display:flex;align-items:center;gap:10px;font:700 .95rem "Sora",sans-serif;letter-spacing:.1em;margin:0 0 22px;position:relative}

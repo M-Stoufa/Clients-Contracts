@@ -27,7 +27,7 @@ const TESTIMONIALS = []; // client quotes: { quote: 'He delivered fast.', name: 
 // -----------------------------------
 
 const $ = id => document.getElementById(id);
-const BUILD = '20260925f'; // must match <meta name="build"> in index.html; bump both on every deploy
+const BUILD = '20260925g'; // must match <meta name="build"> in index.html; bump both on every deploy
 // Self-heal mixed deploys: if this script and the page are from different builds
 // (stale cache), reload once for a consistent pair instead of running half-dead.
 try {
@@ -866,7 +866,7 @@ function setAuthMode(m) {
   authMode = m;
   $('amtabin').classList.toggle('sel', m === 'in');
   $('amtabup').classList.toggle('sel', m === 'up');
-  $('amnamewrap').hidden = m !== 'up';
+  $('amnamewrap').classList.toggle('open', m === 'up');
   $('amforgot').hidden = m !== 'in';
   $('amforgot').textContent = 'Forgot password?';
   $('amgo').textContent = m === 'up' ? 'Create account' : 'Sign in';
