@@ -14,8 +14,7 @@ Single-page static site: clients fill in a work order, sign it, get a deposit co
 1. Create a repo, upload **the extracted files** (not the zip, not `.vscode`) to the repo root.
 2. Repo Settings → Pages → Deploy from branch → `main` / `/ (root)`.
 3. Replace `YOURUSER/YOURREPO` in `index.html` (canonical, og:url, og:image, twitter:image) with your real Pages URL, or link previews break.
-4. After every edit to `style.css`/`script.js`, bump `?v=N` in the `<link>`/`<script>` tags so visitors fetch fresh files instead of cached ones.
-
+4. After every edit to `style.css`/`script.js`, bump `?v=N` in the `<link>`/`<script>` tags so visitors fetch fresh files instead of cached ones. Also bump `BUILD` in `script.js` and `<meta name="build">` in `index.html` together — a mismatch makes the page auto-reload once to a consistent pair.
 ## Before each client / when terms change
 Edit at the top of `script.js`:
 - `DISCORD`, `EMAIL` — page links, PDF contact and fallback email sync from these.

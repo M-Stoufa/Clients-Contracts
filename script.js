@@ -27,6 +27,17 @@ const TESTIMONIALS = []; // client quotes: { quote: 'He delivered fast.', name: 
 // -----------------------------------
 
 const $ = id => document.getElementById(id);
+const BUILD = '20260925d'; // must match <meta name="build"> in index.html; bump both on every deploy
+// Self-heal mixed deploys: if this script and the page are from different builds
+// (stale cache), reload once for a consistent pair instead of running half-dead.
+try {
+  const meta = document.querySelector('meta[name="build"]');
+  const want = meta && meta.content;
+  if (want && want !== BUILD && window.sessionStorage && !sessionStorage.getItem('buildfix')) {
+    sessionStorage.setItem('buildfix', '1');
+    location.reload();
+  }
+} catch (e) {}
 // Fail-soft listener: a missing element (stale cached page, partial deploy) must
 // never kill the whole script — that feature just stays dormant.
 const on = (id, ev, fn) => { try { const el = $(id); if (el) el.addEventListener(ev, fn); } catch (e) {} };
