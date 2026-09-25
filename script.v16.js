@@ -27,7 +27,7 @@ const TESTIMONIALS = []; // client quotes: { quote: 'He delivered fast.', name: 
 // -----------------------------------
 
 const $ = id => document.getElementById(id);
-const BUILD = '20260925h'; // must match <meta name="build"> in index.html; bump both on every deploy
+const BUILD = '20260925i'; // must match <meta name="build"> in index.html; bump both on every deploy
 // Self-heal mixed deploys: if this script and the page are from different builds
 // (stale cache), reload once for a consistent pair instead of running half-dead.
 try {
@@ -785,6 +785,11 @@ function getUser() {
 }
 function getOrders() { try { return JSON.parse(localStorage.getItem(OKEYS) || '{}'); } catch (e) { return {}; } }
 function myOrders() { const u = getUser(); return u ? (getOrders()[u.sub] || []) : []; }
+// Display name: first word only; long first words (8+) shorten to 6 letters + XXX
+const shortName = n => {
+  const w = String(n || '').trim().split(/\s+/).filter(Boolean)[0] || '';
+  return w.length >= 8 ? w.slice(0, 6) + 'XXX' : w;
+};
 function addOrder() {
   const u = getUser();
   if (!u) return;
@@ -820,7 +825,8 @@ function renderAccount() {
   $('gnote').hidden = !!(u || !fbFailed);
   updateNavAcct();
   if (!u) { $('gorders').innerHTML = ''; return; }
-  $('ginfo').textContent = u.name + ' · ' + u.email;
+  const sn = shortName(u.name) || 'Your account';
+  $('ginfo').textContent = sn + ' · ' + u.email;
   const list = myOrders();
   $('gorders').innerHTML = list.length
     ? '<b>Your orders (' + list.length + ')</b>' + list.map(o =>
@@ -878,7 +884,10 @@ function renderAuth() {
   $('amlogged').hidden = !u;
   $('amguest').hidden = !!u;
   if (u) {
-    $('amwho').textContent = u.name + ' · ' + u.email;
+    const sn = shortName(u.name);
+    $('amh').textContent = sn || 'Your account';
+    $('amavatar').textContent = (sn || u.email || '?').trim().charAt(0).toUpperCase() || '?';
+    $('amwho').textContent = u.email;
     $('amverify').hidden = !!u.verified;
   }
 }
@@ -960,7 +969,7 @@ on('amforgot', 'click', async () => {
 async function signOut() {
   try { await window.firebase.auth().signOut(); } catch (e) {}
   ['cn', 'ct', 'ct2'].forEach(id => { const el = $(id); el.value = ''; el.readOnly = false; });
-  renderAccount(); updateTicket(); save();
+  renderAccount(); renderAuth(); updateTicket(); save();
 }
 function loadFb() {
   if (window.firebase) return Promise.resolve();
@@ -988,8 +997,39 @@ function initAuth() {
       });
     } catch (e) {}
     fbReady = true;
+    handleAuthAction(auth);
   } catch (e) { fbFailed = true; }
   renderAccount();
+}
+// Email verification lands HERE (set this URL in Firebase → Templates → Verification):
+// ?mode=verifyEmail&oobCode=… → applied on-brand, no firebaseapp.com page
+function handleAuthAction(auth) {
+  let q = {};
+  try {
+    const search = (typeof location !== 'undefined' && location.search) || '';
+    if (!search) return;
+    q = Object.fromEntries(new URLSearchParams(search));
+  } catch (e) { return; }
+  if (q.mode !== 'verifyEmail' || !q.oobCode) return;
+  const banner = $('vbanner');
+  const show = (msg, bad) => {
+    if (!banner) return;
+    banner.textContent = msg;
+    banner.classList.toggle('bad', !!bad);
+    banner.hidden = false;
+  };
+  auth.applyActionCode(q.oobCode).then(() => {
+    const u = auth.currentUser;
+    return u ? u.reload().catch(() => {}) : null;
+  }).then(() => {
+    renderAccount(); updateNavAcct(); updateTicket();
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    show('Email verified — you can sign in and order now.');
+    setTimeout(() => { try { banner.hidden = true; } catch (e) {} }, 9000);
+  }).catch(() => {
+    show('That verification link is expired or already used — sign in and resend a fresh one from your account.', true);
+  });
+  if (banner) banner.onclick = () => { banner.hidden = true; };
 }
 // All account/modal buttons bind here. Idempotent: safe to call again (e.g. if this
 // script ever runs before the dialog markup is parsed, the DOMContentLoaded pass binds it).

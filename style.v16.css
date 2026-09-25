@@ -172,7 +172,20 @@ button.navlink.main{color:#fff}
 .linklike{background:none;border:0;padding:0;margin:2px 0 0;color:var(--red);font:500 .88rem "Plus Jakarta Sans",sans-serif;cursor:pointer}
 .linklike:hover{text-decoration:underline}
 #amgo{width:100%;margin-top:14px;margin-bottom:20px}
-#amwho{margin:0 0 14px;color:var(--text);font-weight:600}
+#amwho{color:var(--text);font-weight:600}
+/* Organized account card */
+.amprof{display:flex;gap:14px;align-items:center;margin-bottom:18px}
+.amprof h3{margin:0;font-size:1.5rem}
+#amavatar{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;
+  font:700 1.5rem "Sora",sans-serif;color:#fff;background:linear-gradient(135deg,var(--red),#7a100b);
+  box-shadow:0 8px 24px rgba(226,36,27,.35)}
+#amwho{margin:4px 0 0;word-break:break-all}
+#amverify{background:rgba(226,36,27,.10);border:1px solid rgba(226,36,27,.35);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+#amverify p{margin:0 0 10px}
+/* Verification landing banner */
+.vbanner{max-width:1160px;margin:14px auto 0;padding:14px 20px;border-radius:16px;font-size:.95rem;
+  background:rgba(61,220,132,.10);border:1px solid rgba(61,220,132,.4);color:var(--text);cursor:pointer}
+.vbanner.bad{background:rgba(226,36,27,.10);border-color:rgba(226,36,27,.4)}
 #amverify{margin-bottom:14px}
 #amverify .ghost,#amout{width:100%;margin-bottom:10px}
 #authmodal input[type=password]{width:100%;padding:15px 18px;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font-size:1rem;font-family:inherit;transition:border-color .25s,box-shadow .25s}

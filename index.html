@@ -6,7 +6,7 @@
 <title>Stoufa — Start a project</title>
 <meta name="description" content="Order a website, Discord bot, or Minecraft plugin from Mustapha Boussen (Stoufa). Fill in the work order, sign it, and get a deposit confirmation.">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="build" content="20260925h">
+<meta name="build" content="20260925i">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Stoufa: tell me what to build">
 <meta property="og:description" content="Order a website, Discord bot, or Minecraft plugin. Fill in the work order, sign it, and get a deposit confirmation.">
@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="style.v15.css">
+<link rel="stylesheet" href="style.v16.css">
 </head>
 <body>
 <div class="progress" id="prog"></div>
@@ -33,6 +33,7 @@
 </header>
 
 <main id="top">
+  <div id="vbanner" class="vbanner" hidden></div>
   <section class="hero">
     <p class="tag">Taking new projects</p>
     <h1>
@@ -254,8 +255,7 @@
     </aside>
     <div class="am-main">
     <div id="amlogged" hidden>
-      <h3 id="amh">Your account</h3>
-      <p id="amwho" class="privacy"></p>
+      <div class="amprof"><span id="amavatar" aria-hidden="true">?</span><div><h3 id="amh">Your account</h3><p id="amwho" class="privacy"></p></div></div>
       <div id="amverify" hidden>
         <p class="privacy">Email not verified yet — check your inbox (and spam), then you're set.</p>
         <button type="button" class="ghost" id="amresend">Resend verification email</button>
@@ -285,6 +285,6 @@
   </div>
 </div>
 
-<script src="script.v15.js"></script>
+<script src="script.v16.js"></script>
 </body>
 </html>
