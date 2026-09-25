@@ -109,6 +109,24 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #gout{height:44px;font-size:.9rem;margin-bottom:12px}
 .field input[readonly]{opacity:.8;cursor:not-allowed}
 
+/* Wide split-panel auth dialog */
+.am-card.wide{width:min(780px,100%);padding:0;display:grid;grid-template-columns:290px 1fr;overflow:hidden}
+.am-side{position:relative;padding:36px 30px;background:linear-gradient(165deg,rgba(226,36,27,.20),rgba(20,20,20,0) 55%),var(--panel);border-right:1px solid var(--line);overflow:hidden}
+.am-side::before{content:'';position:absolute;width:340px;height:340px;left:-120px;top:-120px;background:radial-gradient(circle,rgba(226,36,27,.32),transparent 65%);pointer-events:none}
+.am-logo{display:flex;align-items:center;gap:10px;font:700 .95rem "Sora",sans-serif;letter-spacing:.1em;margin:0 0 22px;position:relative}
+.am-logo i{width:12px;height:12px;background:var(--red);border-radius:4px;box-shadow:0 0 14px var(--red)}
+.am-side h3{font-size:1.7rem;line-height:1.15;margin:0 0 24px;position:relative}
+.am-feats{list-style:none;margin:0;padding:0;display:grid;gap:14px;position:relative}
+.am-feats li{display:flex;gap:10px;align-items:flex-start;font-size:.92rem;line-height:1.5;color:var(--muted)}
+.am-feats svg{width:18px;height:18px;flex-shrink:0;margin-top:3px;color:var(--red)}
+.am-main{padding:36px 34px}
+@media(max-width:680px){
+  .am-card.wide{grid-template-columns:1fr;max-height:92vh}
+  .am-side{padding:24px 26px 22px;border-right:0;border-bottom:1px solid var(--line)}
+  .am-side h3{font-size:1.3rem;margin:0}
+  .am-feats{display:none}
+  .am-main{padding:28px 24px}
+}
 /* Nav account button */
 button.navlink{font-family:inherit;cursor:pointer}
 button.navlink.main{color:#fff}
@@ -121,7 +139,7 @@ button.navlink.main{color:#fff}
 .am-card{position:relative;width:min(430px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:30px 28px;box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 60px rgba(226,36,27,.12);animation:ampop .35s var(--ease)}
 @keyframes ampop{from{opacity:0;transform:translateY(22px) scale(.97)}}
 .am-card h3{font-size:1.4rem;margin:0 0 18px;letter-spacing:-.02em}
-.am-x{position:absolute;top:12px;right:14px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--glass);color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;transition:.25s}
+.am-x{position:absolute;top:12px;right:14px;z-index:2;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--glass);color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;transition:.25s}
 .am-x:hover{color:#fff;border-color:var(--red);transform:rotate(90deg)}
 #amtabs{margin-bottom:18px}
 #amtabs .chip.sel{border-color:var(--red);background:rgba(226,36,27,.16)}
