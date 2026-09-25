@@ -750,7 +750,15 @@ try {
 // Until FIREBASE_CONFIG is set, the account UI stays hidden and the page works as before.
 // Note: this proves identity to the page, not cryptographically to Stoufa — the
 // order email + verification code stay the trust anchor for deposits.
-const FIREBASE_CONFIG = null; // paste your Firebase web config object here (see README)
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAZNsL2OtmOtPkr2zkOSR6dV4fGRStTq4U",
+  authDomain: "client-contract-9ed29.firebaseapp.com",
+  projectId: "client-contract-9ed29",
+  storageBucket: "client-contract-9ed29.firebasestorage.app",
+  messagingSenderId: "388844178207",
+  appId: "1:388844178207:web:10bb62dadce716ab197e2a",
+  measurementId: "G-JVD4ST7Z0C"
+}; // accounts on: nav + order form get sign in/up, submit gates on login
 const OKEYS = 'stoufa-orders';
 let fbUser = null, fbReady = false, fbFailed = false, authMode = 'in';
 function getUser() {
