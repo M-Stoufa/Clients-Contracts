@@ -27,7 +27,7 @@ const TESTIMONIALS = []; // client quotes: { quote: 'He delivered fast.', name: 
 // -----------------------------------
 
 const $ = id => document.getElementById(id);
-const BUILD = '20260925g'; // must match <meta name="build"> in index.html; bump both on every deploy
+const BUILD = '20260925h'; // must match <meta name="build"> in index.html; bump both on every deploy
 // Self-heal mixed deploys: if this script and the page are from different builds
 // (stale cache), reload once for a consistent pair instead of running half-dead.
 try {
@@ -869,7 +869,7 @@ function setAuthMode(m) {
   $('amnamewrap').classList.toggle('open', m === 'up');
   $('amforgot').hidden = m !== 'in';
   $('amforgot').textContent = 'Forgot password?';
-  $('amgo').textContent = m === 'up' ? 'Create account' : 'Sign in';
+  $('amgolabel').textContent = m === 'up' ? 'Create account' : 'Sign in';
   $('ampass').autocomplete = m === 'up' ? 'new-password' : 'current-password';
   $('amerr').textContent = '';
 }
@@ -893,6 +893,9 @@ async function amSubmit() {
   go.disabled = true;
   try {
     const auth = window.firebase.auth();
+    await auth.setPersistence($('amremember').checked
+      ? window.firebase.auth.Auth.Persistence.LOCAL
+      : window.firebase.auth.Auth.Persistence.SESSION); // "Keep me signed in" is real: session ends with the tab
     if (authMode === 'up') {
       const name = $('amname').value.trim();
       if (!name) { $('amerr').textContent = 'Enter your full name.'; go.disabled = false; return; }
@@ -918,6 +921,9 @@ async function googleLogin() {
   g.innerHTML = 'Opening Google…';
   const done = () => { try { g.disabled = false; g.innerHTML = label; } catch (e) {} };
   try {
+    await auth.setPersistence($('amremember').checked
+      ? window.firebase.auth.Auth.Persistence.LOCAL
+      : window.firebase.auth.Auth.Persistence.SESSION);
     await Promise.race([
       auth.signInWithPopup(provider),
       new Promise((_, rej) => setTimeout(() => rej({ code: 'auth/popup-timeout' }), 9000)),
@@ -935,6 +941,12 @@ async function googleLogin() {
     done();
   }
 }
+on('ameye', 'click', () => {
+  const p = $('ampass'), show = p.type === 'password';
+  p.type = show ? 'text' : 'password';
+  $('ameye').classList.toggle('show', show);
+  $('ameye').setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+});
 on('amforgot', 'click', async () => {
   const email = $('ammail').value.trim();
   if (!window.firebase) { $('amerr').textContent = "Sign-in service didn't load (ad-blocker or offline?). Try again with it off."; return; }

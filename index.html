@@ -6,7 +6,7 @@
 <title>Stoufa — Start a project</title>
 <meta name="description" content="Order a website, Discord bot, or Minecraft plugin from Mustapha Boussen (Stoufa). Fill in the work order, sign it, and get a deposit confirmation.">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="build" content="20260925g">
+<meta name="build" content="20260925h">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Stoufa: tell me what to build">
 <meta property="og:description" content="Order a website, Discord bot, or Minecraft plugin. Fill in the work order, sign it, and get a deposit confirmation.">
@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="style.v14.css">
+<link rel="stylesheet" href="style.v15.css">
 </head>
 <body>
 <div class="progress" id="prog"></div>
@@ -247,13 +247,10 @@
   <div class="am-card wide" role="dialog" aria-modal="true" aria-labelledby="amh">
     <button type="button" class="am-x" id="amx" aria-label="Close">×</button>
     <aside class="am-side" aria-hidden="true">
+      <img class="am-art" src="rockcat.jpg" alt="">
+      <div class="am-shade"></div>
       <p class="am-logo"><i></i>STOUFA</p>
-      <h3>One account.<br>Every order.</h3>
-      <ul class="am-feats">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></svg>Track orders &amp; history</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></svg>Saved details, faster checkout</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></svg>Deposit receipts + PDF copies</li>
-      </ul>
+      <div class="am-quote"><b>&ldquo;Tell me what to build.&rdquo;</b><span>Deposit first — then I start.</span></div>
     </aside>
     <div class="am-main">
     <div id="amlogged" hidden>
@@ -271,12 +268,15 @@
         <button type="button" class="chip sel" id="amtabin">Sign in</button>
         <button type="button" class="chip" id="amtabup">Create account</button>
       </div>
-      <div class="field"><label for="ammail">Email</label><input type="email" id="ammail" autocomplete="email" inputmode="email" maxlength="254"></div>
-      <div class="field" id="amnamewrap"><div class="amnamein"><label for="amname">Your full name</label><input type="text" id="amname" autocomplete="name" maxlength="120"></div></div>
-      <div class="field"><label for="ampass">Password (min 6 characters)</label><input type="password" id="ampass" autocomplete="current-password" maxlength="128"></div>
-      <button type="button" class="linklike" id="amforgot">Forgot password?</button>
+      <div class="field"><label for="ammail">Email</label><div class="inwrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m2 7 10 6L22 7"/></svg><input type="email" id="ammail" autocomplete="email" inputmode="email" maxlength="254"></div></div>
+      <div class="field" id="amnamewrap"><div class="amnamein"><label for="amname">Your full name</label><div class="inwrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg><input type="text" id="amname" autocomplete="name" maxlength="120"></div></div></div>
+      <div class="field"><label for="ampass">Password (min 6 characters)</label><div class="inwrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="3"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><input type="password" id="ampass" autocomplete="current-password" maxlength="128"><button type="button" class="eyebtn" id="ameye" aria-label="Show password"><svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eyeoff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.5 10.5 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-4.94M9.9 4.24A10.5 10.5 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-2.16 3.19M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="m2 2 20 20"/></svg></button></div></div>
+      <div class="amrow">
+        <label class="amrem"><input type="checkbox" id="amremember" checked> Keep me signed in</label>
+        <button type="button" class="linklike" id="amforgot">Forgot password?</button>
+      </div>
       <p class="err" id="amerr" role="alert"></p>
-      <button type="button" class="btn" id="amgo">Sign in</button>
+      <button type="button" class="btn" id="amgo"><span id="amgolabel">Sign in</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
       <div class="amdiv"><span>or</span></div>
       <button type="button" class="ghost" id="amgoogle"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.3H12v4.3h6.5c-.1 1.1-.8 2.7-2.4 3.8l3.6 2.8c2.3-2.1 3.8-5.2 3.8-8.6z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.2 0-5.9-2.1-6.8-5l-3.7 2.9c1.9 3.9 5.6 6.7 10.5 6.7z"/><path fill="#FBBC05" d="M5.2 14.4c-.3-.7-.4-1.5-.4-2.4s.1-1.7.4-2.4L1.4 6.7C.5 8.5 0 10.2 0 12s.5 3.5 1.4 4.9l3.8-2.5z"/><path fill="#EA4335" d="M12 4.7c1.8 0 3 .8 3.7 1.4l3.3-3.2C17.9 1.1 15.2 0 12 0 7.5 0 3.5 2.6 1.4 6.6l3.8 2.9c.9-2.7 3.6-4.8 6.8-4.8z"/></svg>Continue with Google</button>
       <p class="privacy">First time? Use Create account — signing up and logging in is one flow, and orders tie to your account.</p>
@@ -285,6 +285,6 @@
   </div>
 </div>
 
-<script src="script.v14.js"></script>
+<script src="script.v15.js"></script>
 </body>
 </html>

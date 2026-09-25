@@ -116,22 +116,39 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #amnamewrap{display:grid;grid-template-rows:0fr;opacity:0;margin-bottom:0;transition:grid-template-rows .4s var(--ease),opacity .3s,margin .3s}
 #amnamewrap.open{grid-template-rows:1fr;opacity:1;margin-bottom:20px}
 #amnamewrap>.amnamein{overflow:hidden;min-height:0}
-.am-side{position:relative;padding:36px 30px;background:linear-gradient(165deg,rgba(226,36,27,.20),rgba(20,20,20,0) 55%),var(--panel);border-right:1px solid var(--line);overflow:hidden}
-.am-side::before{content:'';position:absolute;width:340px;height:340px;left:-120px;top:-120px;background:radial-gradient(circle,rgba(226,36,27,.32),transparent 65%);pointer-events:none}
-.am-logo{display:flex;align-items:center;gap:10px;font:700 .95rem "Sora",sans-serif;letter-spacing:.1em;margin:0 0 22px;position:relative}
+.am-side{position:relative;padding:0;display:flex;flex-direction:column;justify-content:space-between;background:var(--panel);border-right:1px solid var(--line);overflow:hidden;min-height:560px}
+.am-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 25%;animation:kenburns 22s ease-in-out infinite alternate}
+@keyframes kenburns{to{transform:scale(1.09)}}
+.am-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.62),transparent 32%,transparent 52%,rgba(10,10,10,.88))}
+.am-logo{display:flex;align-items:center;gap:10px;font:700 .95rem "Sora",sans-serif;letter-spacing:.1em;margin:0;padding:30px 28px 0;position:relative}
 .am-logo i{width:12px;height:12px;background:var(--red);border-radius:4px;box-shadow:0 0 14px var(--red)}
-.am-side h3{font-size:1.7rem;line-height:1.15;margin:0 0 24px;position:relative}
-.am-feats{list-style:none;margin:0;padding:0;display:grid;gap:14px;position:relative}
-.am-feats li{display:flex;gap:10px;align-items:flex-start;font-size:.92rem;line-height:1.5;color:var(--muted)}
-.am-feats svg{width:18px;height:18px;flex-shrink:0;margin-top:3px;color:var(--red)}
+.am-quote{position:relative;margin:0 20px 20px;padding:14px 16px;border-radius:16px;background:rgba(10,10,10,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12)}
+.am-quote b{display:block;font:600 1.02rem "Sora",sans-serif;letter-spacing:-.01em}
+.am-quote span{font-size:.82rem;color:var(--muted)}
 .am-main{padding:36px 34px}
 @media(max-width:680px){
   .am-card.wide{grid-template-columns:1fr;max-height:92vh}
-  .am-side{padding:24px 26px 22px;border-right:0;border-bottom:1px solid var(--line)}
-  .am-side h3{font-size:1.3rem;margin:0}
-  .am-feats{display:none}
+  .am-side{min-height:150px;border-right:0;border-bottom:1px solid var(--line)}
+  .am-logo{padding:20px 22px 0}
+  .am-quote{display:none}
   .am-main{padding:28px 24px}
 }
+/* Icon inputs, eye toggle, remember row */
+.inwrap{position:relative}
+.inwrap>svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none;transition:color .25s}
+.inwrap input{padding-left:44px!important}
+.inwrap input[type=password]{padding-right:48px!important}
+.inwrap:focus-within>svg{color:var(--red)}
+.eyebtn{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--muted);cursor:pointer;padding:13px;border-radius:10px;transition:color .2s}
+.eyebtn:hover{color:var(--text)}
+.eyebtn svg{width:18px;height:18px;display:block}
+.eyebtn .eyeoff{display:none}
+.eyebtn.show .eye{display:none}
+.eyebtn.show .eyeoff{display:block}
+.amrow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 0}
+.amrem{display:flex;gap:8px;align-items:center;font-size:.88rem;color:var(--muted);cursor:pointer;margin:0}
+.amrem input{accent-color:var(--red);width:16px;height:16px;margin:0}
+#amgo svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 /* Nav account button */
 button.navlink{font-family:inherit;cursor:pointer}
 button.navlink.main{color:#fff}
