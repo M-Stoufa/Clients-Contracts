@@ -289,9 +289,9 @@ input[type=date]:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 4px
 .faq h2{font-size:clamp(1.6rem,3.2vw,2.3rem);margin-bottom:22px}
 .faq details{margin-bottom:10px;background:var(--glass);border:1px solid var(--line);border-radius:16px;transition:border-color .25s}
 .faq details[open]{border-color:var(--red)}
-.faq summary{list-style:none;cursor:pointer;padding:18px 22px;font:600 1rem "Sora",sans-serif;letter-spacing:-.02em;display:flex;justify-content:space-between;gap:16px}
+.faq summary{list-style:none;cursor:pointer;padding:18px 22px;font:600 1rem "Sora",sans-serif;letter-spacing:-.02em;display:flex;justify-content:flex-start;align-items:center;gap:16px}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:'+';color:var(--red);font-size:1.4rem;line-height:1;transition:transform .3s var(--ease)}
+.faq summary::after{content:'+';color:var(--red);font-size:1.4rem;line-height:1;margin-left:auto;transition:transform .3s var(--ease)}
 .faq details[open] summary::after{transform:rotate(45deg)}
 .faq details p{margin:0;padding:0 22px 20px;color:var(--muted);font-size:.95rem}
 @media(max-width:560px){.hide-m{display:none}}
