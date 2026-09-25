@@ -205,6 +205,11 @@ function check() {
 }
 
 next.addEventListener('click', () => {
+  if (FIREBASE_CONFIG && fbReady && !getUser() && cur === 0) {
+    err.textContent = 'Create an account or sign in to continue — it takes a minute.';
+    openAuth();
+    return;
+  }
   const m = check();
   if (m) { err.textContent = m; return; }
   go(cur + 1);
@@ -817,7 +822,8 @@ function updateNavAcct() {
   if (!FIREBASE_CONFIG) { b.hidden = true; return; }
   b.hidden = false;
   const u = getUser();
-  b.textContent = u ? (u.name.split(' ')[0] || 'Account') : 'Sign in';
+  b.textContent = u ? u.email : 'Sign in';
+  b.title = u ? u.email : '';
 }
 function fbMsg(e) {
   const c = (e && e.code) || '';
@@ -848,6 +854,8 @@ function setAuthMode(m) {
   $('amtabin').classList.toggle('sel', m === 'in');
   $('amtabup').classList.toggle('sel', m === 'up');
   $('amnamewrap').hidden = m !== 'up';
+  $('amforgot').hidden = m !== 'in';
+  $('amforgot').textContent = 'Forgot password?';
   $('amgo').textContent = m === 'up' ? 'Create account' : 'Sign in';
   $('ampass').autocomplete = m === 'up' ? 'new-password' : 'current-password';
   $('amerr').textContent = '';
@@ -864,6 +872,7 @@ function renderAuth() {
 async function amSubmit() {
   const go = $('amgo');
   $('amerr').textContent = '';
+  if (!window.firebase) { $('amerr').textContent = "Sign-in service didn't load (ad-blocker or offline?). Try again with it off."; return; }
   const email = $('ammail').value.trim(), pass = $('ampass').value;
   if (!/^\S+@\S+\.\S+$/.test(email)) { $('amerr').textContent = 'Enter a valid email.'; return; }
   if (pass.length < 6) { $('amerr').textContent = 'Password needs at least 6 characters.'; return; }
@@ -883,6 +892,7 @@ async function amSubmit() {
   } catch (e) { $('amerr').textContent = fbMsg(e); go.disabled = false; }
 }
 async function googleLogin() {
+  if (!window.firebase) { $('amerr').textContent = "Sign-in service didn't load (ad-blocker or offline?). Try again with it off."; return; }
   try {
     await window.firebase.auth().signInWithPopup(new window.firebase.auth.GoogleAuthProvider());
     closeAuth();
@@ -891,6 +901,16 @@ async function googleLogin() {
     $('amerr').textContent = fbMsg(e);
   }
 }
+on('amforgot', 'click', async () => {
+  const email = $('ammail').value.trim();
+  if (!window.firebase) { $('amerr').textContent = "Sign-in service didn't load (ad-blocker or offline?). Try again with it off."; return; }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { $('amerr').textContent = 'Type your email above first.'; return; }
+  try {
+    await window.firebase.auth().sendPasswordResetEmail(email);
+    $('amerr').textContent = '';
+    $('amforgot').textContent = 'Reset link sent — check your inbox and spam.';
+  } catch (e) { $('amerr').textContent = fbMsg(e); }
+});
 async function signOut() {
   try { await window.firebase.auth().signOut(); } catch (e) {}
   ['cn', 'ct', 'ct2'].forEach(id => { const el = $(id); el.value = ''; el.readOnly = false; });

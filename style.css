@@ -112,6 +112,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 /* Nav account button */
 button.navlink{font-family:inherit;cursor:pointer}
 button.navlink.main{color:#fff}
+#navacct{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Auth modal */
 #authmodal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px}
@@ -124,8 +125,13 @@ button.navlink.main{color:#fff}
 .am-x:hover{color:#fff;border-color:var(--red);transform:rotate(90deg)}
 #amtabs{margin-bottom:18px}
 #amtabs .chip.sel{border-color:var(--red);background:rgba(226,36,27,.16)}
-#amgoogle{width:100%;margin-bottom:18px}
-#amgo{width:100%;margin-top:6px}
+#amgoogle{width:100%;margin-bottom:18px;display:flex}
+#amgoogle svg{width:20px;height:20px;flex-shrink:0}
+.amdiv{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.82rem;margin:20px 0 18px}
+.amdiv::before,.amdiv::after{content:'';flex:1;height:1px;background:var(--line)}
+.linklike{background:none;border:0;padding:0;margin:2px 0 0;color:var(--red);font:500 .88rem "Plus Jakarta Sans",sans-serif;cursor:pointer}
+.linklike:hover{text-decoration:underline}
+#amgo{width:100%;margin-top:14px;margin-bottom:20px}
 #amwho{margin:0 0 14px;color:var(--text);font-weight:600}
 #amverify{margin-bottom:14px}
 #amverify .ghost,#amout{width:100%;margin-bottom:10px}
