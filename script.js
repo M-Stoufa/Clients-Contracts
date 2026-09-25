@@ -4,7 +4,7 @@ const MIN_DEPOSIT_PCT = 20; // minimum deposit as a percent of the total
 const MIN_TOTAL = { TND: 10, USD: 5, EUR: 5 }; // minimum order total, per currency
 const DISCORD = 'https://discord.gg/PAwYBcmQAX';
 const EMAIL = 'boussenmostafa@gmail.com'; // single source of truth: page links sync to this on load, PDF + fallback email use it too
-const GOOGLE_CLIENT_ID = ''; // paste your Google OAuth client ID here to require Google sign-in before submit (see README). Empty = sign-in off, page works as before.
+const GOOGLE_CLIENT_ID = '855246719403-55dj889blubd1f5d4vfb0iabh9k3bske.apps.googleusercontent.com'; // Google sign-in required before submit (see README). Empty = sign-in off, page works as before.
 const BUSINESS_ADDRESS = ''; // set a full street address here to show it in the footer (some consumer-protection rules expect one); leave empty to hide
 const PRICES = { 'Website': 0, 'Discord bot': 0, 'Minecraft plugin or mod': 0, 'Something else': 0 }; // starting prices in TND. 0 hides the price.
 const EXTRA_TERMS = [ // added after term 8, shown to the client and included in the PDF and the order email
