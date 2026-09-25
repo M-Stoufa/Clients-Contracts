@@ -850,6 +850,7 @@ function openAuth(mode) {
   if (mode) setAuthMode(mode);
   renderAuth();
   $('authmodal').hidden = false;
+  $('amgo').disabled = false; // fresh state on every open
   document.body.style.overflow = 'hidden';
   setTimeout(() => {
     const f = $(getUser() ? 'amout' : 'ammail'); // focus the action that matters in each view
@@ -883,6 +884,7 @@ function renderAuth() {
 }
 async function amSubmit() {
   const go = $('amgo');
+  if (go.disabled) return; // already sending (double-fire guard)
   $('amerr').textContent = '';
   if (!window.firebase) { $('amerr').textContent = "Sign-in service didn't load (ad-blocker or offline?). Try again with it off."; return; }
   const email = $('ammail').value.trim(), pass = $('ampass').value;
@@ -906,6 +908,7 @@ async function amSubmit() {
 async function googleLogin() {
   if (!window.firebase) { $('amerr').textContent = "Sign-in service didn't load (ad-blocker or offline?). Try again with it off."; return; }
   const g = $('amgoogle');
+  if (g.disabled) return; // already sending (double-fire guard)
   let provider;
   try { provider = new window.firebase.auth.GoogleAuthProvider(); }
   catch (e) { $('amerr').textContent = fbMsg(e); return; }
@@ -976,20 +979,28 @@ function initAuth() {
   } catch (e) { fbFailed = true; }
   renderAccount();
 }
-on('gopen', 'click', () => openAuth());
-on('gout', 'click', signOut);
-on('navacct', 'click', () => openAuth());
-on('amx', 'click', closeAuth);
-on('amback', 'click', closeAuth);
-on('amtabin', 'click', () => setAuthMode('in'));
-on('amtabup', 'click', () => setAuthMode('up'));
-on('amgo', 'click', amSubmit);
-on('amgoogle', 'click', googleLogin);
-on('amout', 'click', signOut);
-on('amresend', 'click', async () => {
-  try { await fbUser.sendEmailVerification(); $('amerr').textContent = ''; $('amverify').querySelector('p').textContent = 'Sent — check your inbox and spam folder.'; }
-  catch (e) { $('amerr').textContent = fbMsg(e); }
-});
+// All account/modal buttons bind here. Idempotent: safe to call again (e.g. if this
+// script ever runs before the dialog markup is parsed, the DOMContentLoaded pass binds it).
+function bindAuth() {
+  if (bindAuth.done) return;
+  on('gopen', 'click', () => openAuth());
+  on('gout', 'click', signOut);
+  on('navacct', 'click', () => openAuth());
+  on('amx', 'click', closeAuth);
+  on('amback', 'click', closeAuth);
+  on('amtabin', 'click', () => setAuthMode('in'));
+  on('amtabup', 'click', () => setAuthMode('up'));
+  on('amgo', 'click', amSubmit);
+  on('amgoogle', 'click', googleLogin);
+  on('amout', 'click', signOut);
+  on('amresend', 'click', async () => {
+    try { await fbUser.sendEmailVerification(); $('amerr').textContent = ''; $('amverify').querySelector('p').textContent = 'Sent — check your inbox and spam folder.'; }
+    catch (e) { $('amerr').textContent = fbMsg(e); }
+  });
+  if ($('amx')) bindAuth.done = true; // last-parsed node present: fully bound
+}
+bindAuth();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindAuth);
 document.addEventListener('keydown', e => { const am = $('authmodal'); if (e.key === 'Escape' && am && !am.hidden) closeAuth(); });
 if (FIREBASE_CONFIG) {
   renderAccount();
