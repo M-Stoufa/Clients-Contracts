@@ -40,6 +40,7 @@ const PH = {
   'Something else': 'Tell me what you have in mind'
 };
 let cur = 0, snapshot = null;
+const t0 = Date.now(); // page load: humans need minutes to fill an order, bots need milliseconds
 
 const rnd = n => {
   const c = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', a = new Uint8Array(n);
@@ -223,14 +224,19 @@ form.addEventListener('submit', async (e) => {
   const m = check();
   if (m) { err.textContent = m; return; }
 
+  if (state && state.status !== 'pending') { renderDone(); return; }
+  const editing = !!state;
+  const endsAt = editing ? state.endsAt : Date.now() + WIN;
+  if (!editing && Date.now() - t0 < 3000) { // time-trap: instant fills are bots — fake success, send nothing
+    finish(cn, endsAt, { 'Verification code': token, 'Signature': $('sg').value.trim(), 'Currency': curCode(), 'Signed on': today(), 'Client name': cn });
+    return;
+  }
+
   btn.disabled = true;
   btn.classList.add('loading');
   btn.querySelector('.btxt').textContent = 'Submitting…';
   setTimeout(() => { if (btn.disabled) btn.querySelector('.btxt').textContent = 'Still sending…'; }, 5000);
 
-  if (state && state.status !== 'pending') { renderDone(); return; }
-  const editing = !!state;
-  const endsAt = editing ? state.endsAt : Date.now() + WIN;
   const ct = $('ct').value.trim();
   const payload = {
     "Order number": orderNo,
@@ -805,10 +811,10 @@ function updateNavAcct() {
 function fbMsg(e) {
   const c = (e && e.code) || '';
   if (c === 'auth/email-already-in-use') return 'That email already has an account — switch to Sign in.';
-  if (c === 'auth/invalid-credential' || c === 'auth/wrong-password') return 'Wrong email or password.';
-  if (c === 'auth/user-not-found') return 'No account for that email — use Create account.';
+  if (c === 'auth/invalid-credential' || c === 'auth/wrong-password' || c === 'auth/user-not-found') return 'Wrong email or password.';
   if (c === 'auth/too-many-requests') return 'Too many tries — wait a bit, then try again.';
   if (c === 'auth/network-request-failed') return 'Network problem — check your connection and try again.';
+  if (c === 'auth/popup-blocked') return 'Popup blocked — allow popups for this site and try again.';
   return (e && e.message) || 'Something went wrong. Try again.';
 }
 function openAuth(mode) {
@@ -816,7 +822,10 @@ function openAuth(mode) {
   renderAuth();
   $('authmodal').hidden = false;
   document.body.style.overflow = 'hidden';
-  setTimeout(() => { const f = $('ammail'); if (f) f.focus({ preventScroll: true }); }, 60);
+  setTimeout(() => {
+    const f = $(getUser() ? 'amout' : 'ammail'); // focus the action that matters in each view
+    if (f) f.focus({ preventScroll: true });
+  }, 60);
 }
 function closeAuth() {
   $('authmodal').hidden = true;

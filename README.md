@@ -25,13 +25,13 @@ Edit at the top of `script.js`:
 - `WORK` — add portfolio cards: `{ title, tag, text, img, link }`.
 - `EXTRA_TERMS` — extra clauses after term 8. Numbering is automatic.
 
-Formspree endpoint (`FS` in `script.js`) receives orders by email. Honeypot field + 15s timeout + mailto fallback are built in.
+Formspree endpoint (`FS` in `script.js`) receives orders by email. Honeypot field, 3-second instant-submit time-trap and 15s timeout plus mailto fallback are built in. The public endpoint can still receive forged posts that skip page validation — always re-check totals, deposit and reply-to before confirming any deposit.
 
-## Google sign-in (required to submit, once configured)
-Yes, it works on GitHub Pages — Google only needs a static HTTPS origin. Until you set it up, the page works exactly as before (no login box, no gate).
-1. Go to [Google Cloud Console](https://console.cloud.google.com), create a project.
-2. APIs & Services → OAuth consent screen → **External** → fill app name + support email.
-3. Add scopes `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile` (non-sensitive — no Google verification needed), then **Publish app** to Production (test mode would force you to pre-register every client).
-4. Credentials → Create → OAuth client ID → **Web application** → Authorized JavaScript origins: add `https://YOURUSER.github.io` and `http://localhost:8000` (local testing) → copy the client ID.
-5. Paste it into `GOOGLE_CLIENT_ID` in `script.js`. Done — clients now sign in with Google, name/email autofill and lock, signature must match the Google name, and each client gets a per-account order history.
-Notes: `file://` preview won't work for login, use the localhost server. If Google's script is blocked (ad-blocker/offline), the form falls back to open submit with a note — orders still reach you.
+## Accounts: Google + email/password via Firebase (free, no backend)
+Until you set this up, the account UI stays hidden and the page works as before.
+1. Go to https://console.firebase.google.com → Add project → you can reuse your existing Google Cloud project.
+2. Build → Authentication → Get started → Sign-in method → enable **Email/Password** and **Google** (one click each, no verification needed).
+3. Authentication → Settings → Authorized domains → add `m-stoufa.github.io` (localhost is allowed by default).
+4. Project Overview → Add app → Web (`</>`) → copy the `firebaseConfig` object.
+5. Paste it as `FIREBASE_CONFIG` in `script.js`. Done — nav + order form get sign in/up, email verification, locked autofill, per-client order history.
+Notes: passwords never touch this page (Firebase handles them). If Firebase's script is blocked (ad-blocker/offline), the form falls back to open submit with a note — orders still reach you.
