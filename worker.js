@@ -92,13 +92,15 @@ async function schema(env) {
 let cachedToken = null, cachedExp = 0;
 async function gmailToken(env) {
   if (cachedToken && Date.now() < cachedExp - 60000) return cachedToken;
+  const cid = String(env.GMAIL_CLIENT_ID || '').trim(), sec = String(env.GMAIL_CLIENT_SECRET || '').trim();
+  const ref = String(env.GMAIL_REFRESH || '').trim(); // pasted tokens often smuggle whitespace
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ client_id: env.GMAIL_CLIENT_ID, client_secret: env.GMAIL_CLIENT_SECRET,
-      refresh_token: env.GMAIL_REFRESH, grant_type: 'refresh_token' }),
+    body: new URLSearchParams({ client_id: cid, client_secret: sec,
+      refresh_token: ref, grant_type: 'refresh_token' }),
   });
   const j = await r.json();
-  if (!j.access_token) { try { console.error('mail-stage: token', j.error || 'no-token'); } catch (e) {} throw new Error('gmail-token'); }
+  if (!j.access_token) { try { console.error('mail-stage: token', j.error || 'no-token', (j.error_description || '').slice(0, 120)); } catch (e) {} throw new Error('gmail-token'); }
   cachedToken = j.access_token;
   cachedExp = Date.now() + (j.expires_in || 3600) * 1000;
   return cachedToken;
