@@ -98,12 +98,13 @@ async function gmailToken(env) {
       refresh_token: env.GMAIL_REFRESH, grant_type: 'refresh_token' }),
   });
   const j = await r.json();
-  if (!j.access_token) throw new Error('gmail-token');
+  if (!j.access_token) { try { console.error('mail-stage: token', j.error || 'no-token'); } catch (e) {} throw new Error('gmail-token'); }
   cachedToken = j.access_token;
   cachedExp = Date.now() + (j.expires_in || 3600) * 1000;
   return cachedToken;
 }
 const b64mime = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const rfc2047 = s => '=?UTF-8?B?' + btoa(unescape(encodeURIComponent(s))).replace(/=+$/, '') + '?='; // raw UTF-8 in headers gets 400s
 async function sendMail(env, to, subject, html, text) {
   const tok = await gmailToken(env);
   const boundary = 'stoufa-' + rand6() + Date.now().toString(36);
@@ -111,7 +112,7 @@ async function sendMail(env, to, subject, html, text) {
     'From: "Stoufa" <' + env.MAIL_USER + '>',
     'To: <' + to + '>',
     'Reply-To: <' + CONTACT_EMAIL + '>',
-    'Subject: ' + subject,
+    'Subject: ' + rfc2047(subject),
     'MIME-Version: 1.0',
     'Content-Type: multipart/alternative; boundary="' + boundary + '"',
     '', '--' + boundary, 'Content-Type: text/plain; charset="UTF-8"', '',
@@ -122,7 +123,12 @@ async function sendMail(env, to, subject, html, text) {
     method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' },
     body: JSON.stringify({ raw: b64mime(mime) }),
   });
-  if (!r.ok) throw new Error('gmail-send');
+  if (!r.ok) {
+    let d = '';
+    try { d = (await r.text()).slice(0, 200); } catch (e) {}
+    try { console.error('mail-stage: send', r.status, d); } catch (e) {}
+    throw new Error('gmail-send');
+  }
 }
 
 // Constant-time string compare where available (login + OTP checks shouldn't leak prefix matches)
