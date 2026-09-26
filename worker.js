@@ -1,11 +1,16 @@
 // Stoufa auth backend — Cloudflare Worker, zero dependencies.
-// Env: DB (D1), MAIL_USER, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH, SESSION_KEY
+// Env: DB (D1), MAIL_USER, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH,
+//      SESSION_KEY, GIS_CLIENT_ID (the site's Google OAuth client, anti-replay)
 // Paste into the Worker dashboard editor (Edit code) and Deploy. No build step.
 
 const ALLOWED_ORIGINS = ['https://m-stoufa.github.io', 'http://localhost:8000', 'http://127.0.0.1:8000'];
 const CONTACT_EMAIL = 'boussenmostafa@gmail.com';
 const OTP_TTL = 15 * 60 * 1000, OTP_RESEND_MS = 60 * 1000, OTP_MAX_TRY = 5;
 const LOGIN_MAX_FAIL = 10, LOGIN_WINDOW_MS = 15 * 60 * 1000;
+// Free-plan CPU is ~10ms/request and PBKDF2 is pure CPU: 40k iterations keeps
+// hashing to a few ms native while staying a real work factor alongside per-user
+// salts and login throttling. (100k+ risks blowing the CPU budget outright.)
+const PBKDF2_ITERS = 40000;
 
 // ---------- tiny helpers ----------
 const te = new TextEncoder();
@@ -43,7 +48,8 @@ async function checkToken(env, token) {
     if (!body || !sig) return 0;
     const ok = await crypto.subtle.verify('HMAC', await hmacKey(env), hexToBytes(sig), te.encode(body));
     if (!ok) return 0;
-    const p = JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
+    const pad = s => s + '='.repeat((4 - (s.length % 4)) % 4); // atob needs padding; unpadded input fails ~1 in 4 tokens
+    const p = JSON.parse(atob(pad(body.replace(/-/g, '+').replace(/_/g, '/'))));
     return (p.exp || 0) > Date.now() ? p.uid : 0;
   } catch (e) { return 0; }
 }
@@ -61,11 +67,12 @@ function bearer(req) {
 async function hashPass(pw, saltHex) {
   const key = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveBits']);
   const salt = saltHex ? hexToBytes(saltHex) : crypto.getRandomValues(new Uint8Array(16));
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 }, key, 256);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PBKDF2_ITERS }, key, 256);
   return { hash: hex(bits), salt: saltHex || hex(salt) };
 }
 
-// ---------- schema ----------
+// ---------- schema (once per isolate; DDL is idempotent anyway) ----------
+let schemaDone = false;
 async function schema(env) {
   await env.DB.batch([
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS users (
@@ -118,7 +125,20 @@ async function sendMail(env, to, subject, html, text) {
   if (!r.ok) throw new Error('gmail-send');
 }
 
+// Constant-time string compare where available (login + OTP checks shouldn't leak prefix matches)
+function safeEq(a, b) {
+  try {
+    const A = te.encode(a), B = te.encode(b);
+    if (A.length !== B.length) return false;
+    if (crypto.subtle.timingSafeEqual) return crypto.subtle.timingSafeEqual(A, B);
+  } catch (e) { /* fall through to plain compare */ }
+  return a === b;
+}
+
 // ---------- branded mail ----------
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 function mailWrap(title, bodyHtml) {
   return '<div style="background:#0a0a0a;color:#f2f0ec;font-family:Arial,sans-serif;padding:32px 24px;">' +
     '<div style="max-width:480px;margin:0 auto;background:#141414;border:1px solid #2a2a2a;border-radius:20px;padding:32px 28px;">' +
@@ -127,13 +147,16 @@ function mailWrap(title, bodyHtml) {
     '<p style="color:#8f8f8f;font-size:13px;margin:24px 0 0;">— Stoufa (Mustapha Boussen)<br>' + CONTACT_EMAIL + '<br>https://m-stoufa.github.io/Clients-Contracts/</p>' +
     '</div></div>';
 }
-const otpMail = (name, code, why) => ({
+const otpMail = (name, code, why) => {
+  const safe = escHtml(name) || 'there';
+  return {
   subject: 'Stoufa — your verification code',
-  html: mailWrap('Your verification code', '<p>Hello ' + name + ',</p><p>' + why + '</p>' +
+  html: mailWrap('Your verification code', '<p>Hello ' + safe + ',</p><p>' + why + '</p>' +
     '<p style="font-size:34px;font-weight:bold;letter-spacing:8px;color:#e2241b;">' + code + '</p>' +
     '<p style="color:#8f8f8f;font-size:13px;">Valid 15 minutes. Didn\u2019t ask for this? Just ignore it.</p>'),
-  text: 'Hello ' + name + ',\nYour Stoufa verification code: ' + code + '\nValid 15 minutes.',
-});
+  text: 'Hello ' + String(name || 'there') + ',\nYour Stoufa verification code: ' + code + '\nValid 15 minutes.',
+  };
+};
 
 // ---------- handlers ----------
 async function needBody(req) {
@@ -162,7 +185,7 @@ async function checkCode(env, email, purpose, code) {
   if (!row) return 'wrong';
   if (Date.now() > row.expires_at) { await env.DB.prepare('DELETE FROM codes WHERE email = ? AND purpose = ?').bind(email, purpose).run(); return 'expired'; }
   if (row.attempts >= OTP_MAX_TRY) return 'locked';
-  const good = (await sha256hex(String(code || '').trim())) === row.code_hash;
+  const good = safeEq(await sha256hex(String(code || '').trim()), row.code_hash);
   if (!good) {
     await env.DB.prepare('UPDATE codes SET attempts = attempts + 1 WHERE email = ? AND purpose = ?').bind(email, purpose).run();
     return 'wrong';
@@ -198,10 +221,10 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'GET' && url.pathname === '/api/health') return json(req, { ok: true });
     if (req.method !== 'POST' && !(req.method === 'GET' && url.pathname === '/api/me')) return json(req, { error: 'method' }, 405);
-    if (!env.DB || !env.SESSION_KEY || !env.MAIL_USER || !env.GMAIL_CLIENT_ID) {
+    if (!env.DB || !env.SESSION_KEY || !env.MAIL_USER || !env.GMAIL_CLIENT_ID || !env.GIS_CLIENT_ID) {
       return json(req, { error: 'setup', message: 'Backend not configured yet.' }, 503);
     }
-    try { await schema(env); } catch (e) { return json(req, { error: 'db' }, 500); }
+    try { if (!schemaDone) { await schema(env); schemaDone = true; } } catch (e) { return json(req, { error: 'db' }, 500); }
     const b = await needBody(req);
 
     // register
@@ -250,7 +273,7 @@ export default {
       const bad = async () => { await noteFail(env, email); return json(req, { error: 'invalid' }, 401); };
       if (!u || !u.pass_hash) return bad();
       const { hash } = await hashPass(String(b.password || ''), u.salt);
-      if (hash !== u.pass_hash) return bad();
+      if (!safeEq(hash, u.pass_hash)) return bad();
       await clearFails(env, email);
       if (!u.verified) return json(req, { error: 'unverified' }, 403);
       const token = await signToken(env, u.id, remember ? 30 * 864e5 : 12 * 36e5);
@@ -270,17 +293,18 @@ export default {
       return json(req, { ok: true });
     }
 
-    // google (GIS access token -> userinfo)
+    // google (GIS access token -> tokeninfo; aud MUST be our own client or any
+    // Google login from any other app could be replayed here)
     if (url.pathname === '/api/google') {
       const remember = b.remember !== false;
       let g = null;
       try {
-        const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: 'Bearer ' + String(b.accessToken || '') },
-        });
+        const r = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(String(b.accessToken || '')));
         g = await r.json();
       } catch (e) { g = null; }
-      if (!g || !g.sub || !g.email || g.email_verified !== true) return json(req, { error: 'google' }, 401);
+      if (!g || !g.sub || !g.email || g.email_verified !== 'true' || !env.GIS_CLIENT_ID || g.aud !== env.GIS_CLIENT_ID) {
+        return json(req, { error: 'google' }, 401);
+      }
       const now = Date.now();
       let u = await env.DB.prepare('SELECT * FROM users WHERE google_sub = ? OR email = ?').bind(g.sub, String(g.email).toLowerCase()).first();
       if (u) {
@@ -295,14 +319,13 @@ export default {
       return json(req, { ok: true, token, user: pub(u) });
     }
 
-    // forgot -> reset OTP (silent ok)
+    // forgot -> reset OTP (silent ok). Google-only accounts may set a password
+    // this way too: the inbox OTP proves ownership either way.
     if (url.pathname === '/api/forgot') {
       const email = String(b.email || '').trim().toLowerCase();
       if (!emailOk(email)) return json(req, { ok: true });
       const u = await env.DB.prepare('SELECT name FROM users WHERE email = ?').bind(email).first();
       if (!u) return json(req, { ok: true });
-      const row = await env.DB.prepare('SELECT id FROM users WHERE email = ? AND pass_hash IS NOT NULL').bind(email).first();
-      if (!row) return json(req, { ok: true });
       try {
         const r = await issueCode(env, email, 'reset', String(u.name).split(/\s+/)[0], 'Use this code to reset your password:');
         if (r.wait) return json(req, { error: 'cooldown', retry_after: r.wait }, 429);
